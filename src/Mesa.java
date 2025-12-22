@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 public class Mesa {
@@ -37,10 +38,6 @@ public class Mesa {
 
         cobraBlinds();
         distribuirCartasJogadores();
-
-
-
-
         distribuirCartasMesa();
     }
 
@@ -75,6 +72,7 @@ public class Mesa {
         System.out.println("1 - Call");
         System.out.println("2 - Raise");
         System.out.println("3 - Fold");
+        System.out.println("4 - All In");
 
         int opcao = sc.nextInt();
 
@@ -82,6 +80,7 @@ public class Mesa {
             case 1 -> call(jogador, maiorAposta);
             case 2 -> raise(jogador, maiorAposta);
             case 3 -> jogador.fold();
+            case 4 -> allIn(jogador);
             default -> {
                 System.out.println("Opção inválida, tente novamente.");
                 turnoJogador(jogador, maiorAposta);
@@ -89,10 +88,52 @@ public class Mesa {
         }
     }
 
+    public void turnoBot(Jogador bot, int maiorAposta){
+        if (!bot.getAtivo()){
+            return;
+        }
+
+        Random rnd = new Random();
+        int act = rnd.nextInt(4);
+
+        System.out.println(bot.getNome() + " está pensando...");
+
+        switch (act){
+            case 0: //FOLD
+                System.out.println(bot.getNome() + " FOLD");
+                bot.setAtivo(false);
+                break;
+            case 1: //CALL
+                System.out.println(bot.getNome() + " CALL");
+                call(bot, maiorAposta);
+                break;
+            case 2: //RAISE
+                int[] percentuais = {10, 20, 30, 40, 50, 60, 70, 80, 90};
+                int p = percentuais[rnd.nextInt(percentuais.length)];
+                int valor = bot.getMoedas() * p / 100;
+                raiseBot(bot, maiorAposta, valor);
+                break;
+            case 3: //ALL IN
+                System.out.println(bot.getNome() + " ALL IN");
+                allIn(bot);
+                break;
+        }
+    }
+
     private void call(Jogador jogador, int maiorAposta) {
-        int valor = maiorAposta - jogador.getApostaAtual();
-        jogador.apostar(valor);
-        winningPot += valor;
+        int valorParaCall = maiorAposta - jogador.getApostaAtual();
+
+        if (valorParaCall >= jogador.getMoedas()) {
+            int allIn = jogador.getMoedas();
+            jogador.apostar(allIn);
+            winningPot += allIn;
+
+            System.out.println(jogador.getNome() + " foi ALL-IN com " + allIn);
+            return;
+        }
+
+        jogador.apostar(valorParaCall);
+        winningPot += valorParaCall;
     }
 
     private void raise(Jogador jogador, int maiorAposta) {
@@ -135,6 +176,46 @@ public class Mesa {
             System.out.println(jogador.getNome() + " deu RAISE de " + valorRaise +
                     " (total apostado: " + total + ")");
         }
+    }
+
+    private void raiseBot(Jogador bot, int maiorAposta, int valorRaise){
+
+        int valorParaCall = maiorAposta - bot.getApostaAtual();
+
+        // Se o jogador nem consegue dar call → all-in automático
+        if (valorParaCall >= bot.getMoedas()) {
+            int allIn = bot.getMoedas();
+            bot.apostar(allIn);
+            winningPot += allIn;
+
+            System.out.println(bot.getNome() + " foi ALL-IN com " + allIn);
+            return;
+        }
+
+        int total = valorParaCall + valorRaise;
+
+        bot.apostar(total);
+        winningPot += total;
+
+        if (valorRaise == 0) {
+            System.out.println(bot.getNome() + " deu CALL (" + total + ")");
+        } else {
+            System.out.println(bot.getNome() + " deu RAISE de " + valorRaise +
+                    " (total apostado: " + total + ")");
+        }
+    }
+
+    public void allIn(Jogador jogador){
+        int valor = jogador.getMoedas();
+
+        if (valor <= 0) {
+            return;
+        }
+
+        jogador.apostar(valor);
+        winningPot += valor;
+
+        System.out.println(jogador.getNome() + " foi ALL-IN com " + valor);
     }
 
     public void cobraBlinds(){
