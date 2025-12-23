@@ -29,16 +29,15 @@ public class Mesa {
         }
     }
 
-    public void iniciarRodada() {
+    private void iniciarRodada() {
         baralho = new Baralho();
         baralho.shuffle();
         cartasMesa.clear();
         this.winningPot = 0;
-
         jogadores.forEach(Jogador::limparMao);
     }
 
-    public void controleJogo() {
+    private void controleJogo() {
         iniciarRodada();
 
         cobraBlinds();
@@ -50,29 +49,28 @@ public class Mesa {
             return;
         }
 
-        //distribuirFlop();
-        //resetarApostasDaFase();
+        distribuirFlop();
+        resetarApostasDaFase();
         executarRodadaDeApostas();
 
-        //distribuirTurn();
-        //resetarApostasDaFase();
+        distribuirTurn_River();
+        resetarApostasDaFase();
         executarRodadaDeApostas();
 
-        //distribuirRiver();
-        //resetarApostasDaFase();
+        distribuirTurn_River();
+        resetarApostasDaFase();
         executarRodadaDeApostas();
 
         //finalizarRodada(); // showdown
     }
 
-    private void distribuirCartasMesa() {
-        // Flop (3 cartas)
+    private void distribuirFlop() {
         for (int i = 0; i < 3; i++) {
             cartasMesa.add(baralho.comprarCarta());
         }
-        // Turn
-        cartasMesa.add(baralho.comprarCarta());
-        // River
+    }
+
+    private void distribuirTurn_River(){
         cartasMesa.add(baralho.comprarCarta());
     }
 
@@ -86,7 +84,7 @@ public class Mesa {
         }
     }
 
-    public void turnoJogador(Jogador jogador, int maiorAposta) {
+    private void turnoJogador(Jogador jogador, int maiorAposta) {
         System.out.println("\nVez de: " + jogador.getNome());
         System.out.println("Moedas: " + jogador.getMoedas());
         System.out.println("Aposta atual: " + jogador.getApostaAtual());
@@ -112,7 +110,7 @@ public class Mesa {
         }
     }
 
-    public void turnoBot(Jogador bot, int maiorAposta){
+    private void turnoBot(Jogador bot, int maiorAposta){
         if (!bot.getAtivo()){
             return;
         }
@@ -141,6 +139,45 @@ public class Mesa {
                 System.out.println(bot.getNome() + " ALL IN");
                 allIn(bot);
                 break;
+        }
+    }
+
+    private void executarRodadaDeApostas() {
+        boolean rodadaEncerrada;
+
+        do {
+            rodadaEncerrada = true;
+
+            for (Jogador jogador : jogadores) {
+
+                if (!jogador.getAtivo()) {
+                    continue;
+                }
+
+                // Se só sobrou um jogador ativo, encerra
+                if (jogadoresAtivos() <= 1) {
+                    return;
+                }
+
+                // Jogador ainda precisa responder à maior aposta
+                if (jogador.getApostaAtual() < maiorAposta) {
+                    rodadaEncerrada = false;
+
+                    if (jogador.getBot()) {
+                        turnoBot(jogador, maiorAposta);
+                    } else {
+                        turnoJogador(jogador, maiorAposta);
+                    }
+                }
+            }
+
+        } while (!rodadaEncerrada);
+    }
+
+    private void resetarApostasDaFase(){
+        this.maiorAposta = 0;
+        for (Jogador jogador: this.jogadores){
+            jogador.resetarAposta();
         }
     }
 
@@ -191,9 +228,9 @@ public class Mesa {
 
         int total = valorParaCall + valorRaise;
 
-        this.maiorAposta = jogador.getApostaAtual();
         jogador.apostar(total);
         winningPot += total;
+        this.maiorAposta = jogador.getApostaAtual();
 
         if (valorRaise == 0) {
             System.out.println(jogador.getNome() + " deu CALL (" + total + ")");
@@ -219,9 +256,9 @@ public class Mesa {
 
         int total = valorParaCall + valorRaise;
 
-        this.maiorAposta = bot.getApostaAtual();
         bot.apostar(total);
         winningPot += total;
+        this.maiorAposta = bot.getApostaAtual();
 
         if (valorRaise == 0) {
             System.out.println(bot.getNome() + " deu CALL (" + total + ")");
@@ -231,24 +268,24 @@ public class Mesa {
         }
     }
 
-    public void allIn(Jogador jogador){
+    private void allIn(Jogador jogador){
         int valor = jogador.getMoedas();
 
         if (valor <= 0) {
             return;
         }
 
+        jogador.apostar(valor);
+        winningPot += valor;
+
         if (jogador.getApostaAtual() > maiorAposta) {
             maiorAposta = jogador.getApostaAtual();
         }
 
-        jogador.apostar(valor);
-        winningPot += valor;
-
         System.out.println(jogador.getNome() + " foi ALL-IN com " + valor);
     }
 
-    public void cobraBlinds(){
+    private void cobraBlinds(){
         if (jogadores.size() < 2) {
             throw new IllegalStateException("Jogadores insuficientes para cobrar blinds.");
         }
@@ -294,20 +331,45 @@ public class Mesa {
         return ativos;
     }
 
-    private void executarRodadaDeApostas(){
-        for (Jogador jogador: this.jogadores){
-            if(jogador.getAtivo()){
-                if(jogador.getBot()){
-                    turnoBot(jogador, maiorAposta);
-                }else{
-                    turnoJogador(jogador, maiorAposta);
+    private void finalizarRodada() {
+
+        //Vitória automática por fold
+        if (jogadoresAtivos() == 1) {
+            for (Jogador jogador : jogadores) {
+                if (jogador.getAtivo()) {
+                    jogador.recebePremio(winningPot); // ou jogador.addMoedas(...)
+                    System.out.println(jogador.getNome() + " ganhou o pote de " + winningPot + " por fold!");
+                    break;
                 }
             }
         }
-    }
+        //Showdown (placeholder)
+        else {
+            System.out.println("\n--- SHOWDOWN ---");
+            for (Jogador jogador : jogadores) {
+                if (jogador.getAtivo()) {
+                    System.out.println(jogador.getNome() + " chegou ao showdown.");
+                }
+            }
 
-    public void finalizarRodada() {
-        // distribuir o pote para o vencedor (ou dividir)
+            // TEMPORÁRIO: até o AvaliadorDeMao existir
+            Jogador vencedor = null;
+            for (Jogador jogador : jogadores) {
+                if (jogador.getAtivo()) {
+                    vencedor = jogador;
+                    break;
+                }
+            }
+
+            if (vencedor != null) {
+                vencedor.recebePremio(winningPot);
+                System.out.println(vencedor.getNome() + " ganhou o pote de " + winningPot + " (temporário).");
+            }
+        }
+
+        winningPot = 0;
+        maiorAposta = 0;
+
         nextDealer();
     }
 

@@ -36,6 +36,10 @@ public class Jogador {
         return this.moedas;
     }
 
+    public void recebePremio(int premio){
+        this.moedas += premio;
+    }
+
     public boolean getAtivo(){
         return this.ativo;
     }
@@ -65,6 +69,9 @@ public class Jogador {
 
     public void limparMao() {
         mao.clear();
+        if (!eliminado){
+            this.ativo = true;
+        }
     }
 
     public int apostar(int valor) {
