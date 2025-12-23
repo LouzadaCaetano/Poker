@@ -11,6 +11,7 @@ public class Menu {
         String nome = this.sc.next();
 
         Jogador principal = new Jogador(nome, 1000);
+        principal.playerHumano();
 
         int quantBots;
         do {

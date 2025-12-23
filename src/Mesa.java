@@ -11,6 +11,7 @@ public class Mesa {
     private final int smallBlind = 10;
     private final int bigBlind = this.smallBlind * 2;
     private int winningPot;
+    private int maiorAposta;
     private int dealerIndex;
 
     private Scanner sc = new Scanner(System.in);
@@ -23,7 +24,7 @@ public class Mesa {
 
     public void iniciarJogo(){
         while(jogadoresAtivos() > 1){
-            iniciarRodada();
+            controleJogo();
             dealerIndex = (dealerIndex + 1) % jogadores.size();
         }
     }
@@ -35,10 +36,33 @@ public class Mesa {
         this.winningPot = 0;
 
         jogadores.forEach(Jogador::limparMao);
+    }
+
+    public void controleJogo() {
+        iniciarRodada();
 
         cobraBlinds();
         distribuirCartasJogadores();
-        distribuirCartasMesa();
+
+        executarRodadaDeApostas(); // pré-flop
+        if (jogadoresAtivos() <= 1) {
+            finalizarRodada();
+            return;
+        }
+
+        //distribuirFlop();
+        //resetarApostasDaFase();
+        executarRodadaDeApostas();
+
+        //distribuirTurn();
+        //resetarApostasDaFase();
+        executarRodadaDeApostas();
+
+        //distribuirRiver();
+        //resetarApostasDaFase();
+        executarRodadaDeApostas();
+
+        //finalizarRodada(); // showdown
     }
 
     private void distribuirCartasMesa() {
@@ -167,6 +191,7 @@ public class Mesa {
 
         int total = valorParaCall + valorRaise;
 
+        this.maiorAposta = jogador.getApostaAtual();
         jogador.apostar(total);
         winningPot += total;
 
@@ -194,6 +219,7 @@ public class Mesa {
 
         int total = valorParaCall + valorRaise;
 
+        this.maiorAposta = bot.getApostaAtual();
         bot.apostar(total);
         winningPot += total;
 
@@ -210,6 +236,10 @@ public class Mesa {
 
         if (valor <= 0) {
             return;
+        }
+
+        if (jogador.getApostaAtual() > maiorAposta) {
+            maiorAposta = jogador.getApostaAtual();
         }
 
         jogador.apostar(valor);
@@ -242,6 +272,7 @@ public class Mesa {
         bb.apostar(bigBlind);
 
         this.winningPot += smallBlind + bigBlind;
+        this.maiorAposta = bigBlind;
 
         System.out.println(sb.getNome() + " pagou Small Blind: " + smallBlind);
         System.out.println(bb.getNome() + " pagou Big Blind: " + bigBlind);
@@ -261,6 +292,18 @@ public class Mesa {
         }
 
         return ativos;
+    }
+
+    private void executarRodadaDeApostas(){
+        for (Jogador jogador: this.jogadores){
+            if(jogador.getAtivo()){
+                if(jogador.getBot()){
+                    turnoBot(jogador, maiorAposta);
+                }else{
+                    turnoJogador(jogador, maiorAposta);
+                }
+            }
+        }
     }
 
     public void finalizarRodada() {

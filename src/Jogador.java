@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Jogador {
     private String nome;
+    private boolean bot;
     private int moedas;
     private boolean ativo;
     private boolean eliminado;
@@ -12,6 +13,7 @@ public class Jogador {
 
     public Jogador(String nome, int moedas){
         this.nome = nome;
+        this.bot = true;
         this.moedas = moedas;
         this.ativo = true;
         this.eliminado = false;
@@ -20,6 +22,14 @@ public class Jogador {
 
     public String getNome(){
         return this.nome;
+    }
+
+    public void playerHumano(){
+        this.bot = false;
+    }
+
+    public boolean getBot(){
+        return this.bot;
     }
 
     public int getMoedas(){
