@@ -34,7 +34,15 @@ public class Mesa {
         baralho.shuffle();
         cartasMesa.clear();
         this.winningPot = 0;
-        jogadores.forEach(Jogador::limparMao);
+
+        for(Jogador jogador: this.jogadores){
+            if (jogador.getMoedas() == 0){
+                jogador.setAtivo(false);
+                jogador.setEliminado(true);
+            }else{
+                jogador.limparMao();
+            }
+        }
     }
 
     private void controleJogo() {
@@ -61,17 +69,27 @@ public class Mesa {
         resetarApostasDaFase();
         executarRodadaDeApostas();
 
-        //finalizarRodada(); // showdown
+        finalizarRodada(); // showdown
     }
 
     private void distribuirFlop() {
         for (int i = 0; i < 3; i++) {
             cartasMesa.add(baralho.comprarCarta());
         }
+        printMesa();
     }
 
     private void distribuirTurn_River(){
         cartasMesa.add(baralho.comprarCarta());
+        printMesa();
+    }
+
+    private void printMesa(){
+        System.out.println("\nCartas na mesa:");
+        for (Carta card: this.cartasMesa){
+            card.printCarta();
+        }
+
     }
 
     private void distribuirCartasJogadores() {
@@ -79,7 +97,6 @@ public class Mesa {
             for (Jogador jogador : jogadores) {
                 Carta card = baralho.comprarCarta();
                 jogador.receberCarta(card);
-                card.printCarta();
             }
         }
     }
@@ -89,6 +106,8 @@ public class Mesa {
         System.out.println("Moedas: " + jogador.getMoedas());
         System.out.println("Aposta atual: " + jogador.getApostaAtual());
         System.out.println("Maior aposta da rodada: " + maiorAposta);
+
+        jogador.getMao();
 
         System.out.println("Escolha uma ação:");
         System.out.println("1 - Call");
@@ -150,9 +169,9 @@ public class Mesa {
 
             for (Jogador jogador : jogadores) {
 
-                if (!jogador.getAtivo()) {
-                    continue;
-                }
+                //Valida se o jogar pode fazer algo na rodada
+                if (!jogador.getAtivo()) continue;
+                if (jogador.getMoedas() == 0) continue;
 
                 // Se só sobrou um jogador ativo, encerra
                 if (jogadoresAtivos() <= 1) {

@@ -56,8 +56,11 @@ public class Jogador {
         this.eliminado = eliminado;
     }
 
-    public List<Carta> getMao() {
-        return Collections.unmodifiableList(mao);
+    public void getMao() {
+        System.out.println("Suas cartas:");
+        for(Carta card: this.mao){
+            card.printCarta();
+        }
     }
 
     public void receberCarta(Carta carta) {
